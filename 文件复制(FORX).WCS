@@ -1,0 +1,64 @@
+﻿CALL @WIN1
+_SUB SetEdit2
+    BROW txtfile,, 请选择列表文件, txt
+    FIND $%txtFILE%=,!ENVI @Edit1=%txtFILE%
+_END
+_SUB SetEdit3
+    BROW MntDir2,*%Edit3%, 请选择源文件目录
+    FIND $%Mntdir2%=,!ENVI @Edit3=%Mntdir2%
+_END
+
+//配置文件或者PECMD程序放入目标目录
+
+_SUB CCC
+    READ "%Edit1%",*r,&&all
+    FORX *NL &all,&&content,
+    {
+    FIND *&content=,EXIT - 
+    SET n=0
+    CALC n=%n%+1
+    //MESS %n%
+    }
+    FORX *NL &all,&&content,
+    {
+    FIND *&content=,EXIT - 
+    SET m=0
+    FDIR &&Dir=%&content%
+    PATH %&Dir%
+    {
+    FILE "%Edit3%\%&content%=>"%&Dir%"
+    FIND $%&ERROR%=0,{
+    SET  &V=%MEMO1%
+    WRIT *v  &V,$+2,%&content%复制完成！
+    ENVI @MEMO1=%&V%
+    }!{
+    SET  &V=%MEMO1%
+    WRIT *v  &V,$+2,%&content%复制失败！
+    ENVI @MEMO1=%&V%    
+    }
+    }  
+    CALC vvv=%m%/%n%*100
+    ENVI @PBAR1=%vvv%:%m%/%n%
+    CALC m=%m%+1
+    }
+    MESS 复制完成
+_END
+
+_SUB Start
+    IFEX $%m%<%n%&$%m%=0,Thread* CALL CCC
+_END
+    
+_SUB WIN1,W600H400,文件复制 By:泮安宁
+    LABE -left Label1,W400H20,注意：需将本程序移动到目标目录运行！,,0xFF0000
+    LABE Label,L22W120H20T25,请选择列表文件:
+    EDIT -3D -vcenter Edit1,L150W360H25T20,,,0x100
+    ITEM Item1,L515W50H25T19,浏览,CALL SetEdit2
+    LABE Labe3,L22W135H20T65,绝对路径同级目录：
+    EDIT -3D -vcenter Edit3,L150W360H25T60,,,0x100
+    ITEM Item3,L515W50H25T59,浏览,CALL SetEdit3
+    PBAR PBAR1,L20T90W545H24,
+    MEMO. MEMO1,L20T130W565H180,
+    ITEM Item4,L240W100H50T315,开始复制,CALL Start
+    ITEM Item5,L515W50H25T330,退出,KILL \文件复制 By:泮安宁
+    ENVI @MEMO1.ReadOnly=1
+_END
