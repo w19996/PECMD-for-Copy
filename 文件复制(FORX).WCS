@@ -33,7 +33,7 @@ _SUB CCC
     ENVI @PBAR1=%&vvv%:%m%/%n%
     FILE "%Edit3%\%&content%=>"%&Dir%"  
     SET &abcd=%&ERROR%
-    MESS %&abcd%
+    //MESS %&abcd%
     IFEX [ $%&abcd%=0 | $%&abcd%=2 ],{
     FIND $%&abcd%=0,{ WRIT *v  &V,$+2,%&content%复制成功！
     }!{ WRIT *v  &V,$+2,%&content%文件不存在！   
