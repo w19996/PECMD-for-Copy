@@ -1,4 +1,4 @@
-CALL @WIN1
+﻿CALL @WIN1
 _SUB SetEdit2
     BROW txtfile,, 请选择列表文件, txt
     FIND $%txtFILE%=,!ENVI @Edit1=%txtFILE%
@@ -19,28 +19,25 @@ _SUB CCC
     CALC n=%n%+1
     //MESS %n%
     }
-    SET m=0
-    SET  &V=%MEMO1%
+    SET m=0  
     FORX *NL &all,&&content,
     {
     FIND *&content=,EXIT - 
-    ENVI @MEMO1=%&V%
-    CALC m=%m%+1
     //MESS %m%    
     FDIR &&Dir=%&content%
     PATH %&Dir%
+    FILE "%Edit3%\%&content%=>"%&Dir%"
+    CALC m=%m%+1
     CALC &&vvv=%m%/%n%*100  
-    ENVI @PBAR1=%&vvv%:%m%/%n%
-    FILE "%Edit3%\%&content%=>"%&Dir%"  
+    ENVI @PBAR1=%&vvv%:%m%/%n%  
     SET &abcd=%&ERROR%
-    //MESS %&abcd%
     IFEX [ $%&abcd%=0 | $%&abcd%=2 ],{
-    FIND $%&abcd%=0,{ WRIT *v  &V,$+2,%&content%复制成功！
-    }!{ WRIT *v  &V,$+2,%&content%文件不存在！   
+    FIND $%&abcd%=0,{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+2,%&content%复制成功！|ENVI @MEMO1=%&V%
+    }!{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+2,%&content%文件不存在！|ENVI @MEMO1=%&V%   
     } 
-    }!{  
-    WRIT *v  &V,$+2,%&content%复制失败！
-    } 
+    }! { TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+2,%&content%复制失败！|ENVI @MEMO1=%&V%
+    }  
+    //MESS %&abcd%
     }
     MESS 复制完成
 _END
