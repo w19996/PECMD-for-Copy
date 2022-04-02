@@ -27,15 +27,16 @@ _SUB CCC
     FDIR &&Dir=%&content%
     PATH %&Dir%
     FILE "%Edit3%\%&content%=>"%&Dir%"
+    SET &abcd=%&ERROR%
     CALC m=%m%+1
     CALC &&vvv=%m%/%n%*100  
     ENVI @PBAR1=%&vvv%:%m%/%n%  
-    SET &abcd=%&ERROR%
     IFEX [ $%&abcd%=0 | $%&abcd%=2 ],{
-    FIND $%&abcd%=0,{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+2,%&content%复制成功！|ENVI @MEMO1=%&V%
-    }!{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+2,%&content%文件不存在！|ENVI @MEMO1=%&V%   
+    //MESS %&abcd%
+    FIND $%&abcd%=0,{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制成功！|ENVI @MEMO1=%&V%
+    }!{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
     } 
-    }! { TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+2,%&content%复制失败！|ENVI @MEMO1=%&V%
+    }! { TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制失败！|ENVI @MEMO1=%&V%
     }  
     //MESS %&abcd%
     }
