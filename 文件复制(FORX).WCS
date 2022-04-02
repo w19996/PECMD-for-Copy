@@ -28,7 +28,7 @@ _SUB CCC
     CALC m=%m%+1
     //MESS %m%    
     FDIR &&Dir=%&content%
-    PATH %&Dir%,
+    PATH %&Dir%
     CALC &&vvv=%m%/%n%*100  
     ENVI @PBAR1=%&vvv%:%m%/%n%
     FILE "%Edit3%\%&content%=>"%&Dir%"  
