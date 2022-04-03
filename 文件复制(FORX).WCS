@@ -25,8 +25,8 @@ _SUB CCC
     FIND *&content=,EXIT - 
     //MESS %m%    
     FDIR &&Dir=%&content%
-    PATH %&Dir%
     TEAM FIND $%Chek1.Check%=1,MESS    暂停中\n点击确定继续|ENVI @Chek1.Check=0
+    PATH %&Dir%
     FILE "%Edit3%\%&content%=>"%&Dir%"
     SET &abcd=%&ERROR%
     CALC m=%m%+1
