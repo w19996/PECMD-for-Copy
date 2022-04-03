@@ -48,7 +48,8 @@ _END
 
 _SUB Start
     //IFEX $%m%<%n%&$%m%=0,Thread* CALL CCC
-    TEAM ENVI @Item4.Enable=0|ENVI @Item4.Visible=0|ENVI @Item6.Enable=1|ENVI @Item6.Visible=1|Thread* CALL CCC
+    TEAM FORX %Edit1%,Mytxt,1,FEXT fEx=%Mytxt%|FEXT fD=%Edit3%
+    IFEX [ '%fEx%'='txt' & '%fD%'='' & '%Edit3%'<>'' ],TEAM ENVI @Item4.Enable=0|ENVI @Item4.Visible=0|ENVI @Item6.Enable=1|ENVI @Item6.Visible=1|Thread* CALL CCC! MESS 请选择正确的列表文件和目录
 _END
 
 _SUB Stop
