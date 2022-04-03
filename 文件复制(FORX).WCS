@@ -41,12 +41,13 @@ _SUB CCC
     //MESS %&abcd%
     }
     MESS 复制完成  
+    ENVI @Item4=复制完成
     //ENVI @Item6.Enable=0
 _END
 
 _SUB Start
     //IFEX $%m%<%n%&$%m%=0,Thread* CALL CCC
-    TEAM ENVI @Item4.Enable=0|Thread* CALL CCC|ENVI @Item4=复制完成
+    TEAM ENVI @Item4.Enable=0|Thread* CALL CCC|ENVI @Item4=复制中
 _END
 
 //_SUB Stop
@@ -55,7 +56,7 @@ _END
     
 _SUB WIN1,W600H400,文件复制 By:泮安宁
     LABE -left Label1,W400H20,注意：需将本程序移动到目标目录运行！,,0xFF0000
-    LABE Label,L22W120H20T25,请选择列表文件:
+    LABE Label,L22W120H20T25,请选择列表文件：
     EDIT -3D -vcenter Edit1,L150W360H25T20,,,0x100
     ITEM Item1,L515W50H25T19,浏览,CALL SetEdit2
     LABE Labe3,L22W135H20T65,相对路径同级目录：
