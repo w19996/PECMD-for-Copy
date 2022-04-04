@@ -24,7 +24,8 @@ _SUB CCC
     {
     FIND *&content=,EXIT - 
     //MESS %m%    
-    FDIR &&Dir=%&content%
+    FDIR &&Dir=%CurDir%\%&content%
+    //MESS %&Dir%
     TEAM FIND $%Chek1.Check%=1,MESS 点击确定继续 @暂停中#OK|ENVI @Chek1.Check=0
     PATH %&Dir%
     FILE "%Edit3%\%&content%=>"%&Dir%"
