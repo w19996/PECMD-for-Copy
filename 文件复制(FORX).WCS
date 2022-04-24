@@ -1,4 +1,8 @@
-﻿CALL @WIN1
+﻿@TEAM ENVI^ EnviMode=1| ENVI^ ForceLocal=1
+CALL $--ret:&DPIA user32.dll,SetProcessDPIAware //设置dpi感知模式
+CALL $--ret:&hdc user32.dll,GetDC,#0  //获取显示器0（一般是主显示器）的句柄
+CALL $--ret:&LOGPIXELSX Gdi32.dll,GetDeviceCaps,#%hdc%,#88     //获取显示器横向DPI，LOGPIXELSX为#88，纵向LOGPIXELSY为#90,两个值是一样的。
+CALL @WIN1
 _SUB SetEdit2
     BROW txtfile,, 请选择列表文件, txt
     FIND $%txtFILE%=,!ENVI @Edit1=%txtFILE%
@@ -12,27 +16,27 @@ _END
 
 _SUB CCC
     READ "%Edit1%",*r,&&all
+    SET &n=0
     FORX *NL &all,&&content,
     {
-    FIND *&content=,EXIT - 
-    SET n=0
-    CALC n=%n%+1
+    FIND *&content=,EXIT -    
+    CALC &n=%&n%+1
     //MESS %n%
     }
-    SET m=0  
+    SET &m=0  
     FORX *NL &all,&&content,
     {
     FIND *&content=,EXIT - 
-    //MESS %m%    
-    FDIR &&Dir=%CurDir%\%&content%
+    //MESS %&m%    
+    FDIR &&Dir=%&CurDir%\%&content%
     //MESS %&Dir%
-    TEAM FIND $%Chek1.Check%=1,MESS 点击确定继续 @暂停中#OK|ENVI @Chek1.Check=0
+    TEAM FIND $%Chek1.Check%=1,MESS= 点击确定继续 @暂停中#OK|ENVI @Chek1.Check=0
     PATH %&Dir%
-    FILE "%Edit3%\%&content%=>"%&Dir%"
+    FILE "%Edit3%\%&content%"=>"%&Dir%"
     SET &abcd=%&ERROR%
-    CALC m=%m%+1
-    CALC &&vvv=%m%/%n%*100  
-    ENVI @PBAR1=%&vvv%:%m%/%n%  
+    CALC &m=%&m%+1
+    CALC &&vvv=%&m%/%&n%*100  
+    ENVI @PBAR1=%&vvv%:%&m%/%n%  
     IFEX [ $%&abcd%=0 | $%&abcd%=2 ],{
     //MESS %&abcd%
     FIND $%&abcd%=0,{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制成功！|ENVI @MEMO1=%&V%
@@ -42,7 +46,7 @@ _SUB CCC
     }  
     //MESS %&abcd%
     }
-    MESS 复制完成  
+    MESS= 复制完成  
     ENVI @Item6=复制完成
     ENVI @Item6.Enable=0
 _END
@@ -50,19 +54,20 @@ _END
 _SUB Start
     //IFEX $%m%<%n%&$%m%=0,Thread* CALL CCC
     TEAM FORX %Edit1%,Mytxt,1,FEXT fEx=%Mytxt%|FEXT fD=%Edit3%
-    IFEX [ '%fEx%'='txt' & '%fD%'='' & '%Edit3%'<>'' ],TEAM ENVI @Item4.Enable=0|ENVI @Item4.Visible=0|ENVI @Item6.Enable=1|ENVI @Item6.Visible=1|Thread* CALL CCC! MESS 请选择正确的列表文件和目录
+    IFEX [ '%fEx%'='txt' & '%fD%'='' & '%Edit3%'<>'' ],TEAM ENVI @Item4.Enable=0|ENVI @Item4.Visible=0|ENVI @Item6.Enable=1|ENVI @Item6.Visible=1|Thread* CALL CCC! MESS= 请选择正确的列表文件和目录
 _END
 
 _SUB Stop
     ENVI @Chek1.Check=1 
 _END
     
-_SUB WIN1,W600H400,文件复制 By:泮安宁,,,,,-discloseb
+_SUB WIN1,W600H400,文件复制 By:泮安宁,,,,,-discloseb -scale:%&LOGPIXELSX%
+	ENVI @WIN1.Font=12:宋体
     LABE -left Label1,W400H20,注意：需将本程序移动到目标目录运行！,,0xFF0000
-    LABE Label,L22W120H20T25,请选择列表文件：
+    LABE Label,L22W130H20T20,选择列表文件：
     EDIT -3D -vcenter Edit1,L150W360H25T20,,,0x100
     ITEM Item1,L515W50H25T19,浏览,CALL SetEdit2
-    LABE Labe3,L22W135H20T65,相对路径同级目录：
+    LABE Labe3,L22W145H20T60,路径上级目录：
     EDIT -3D -vcenter Edit3,L150W360H25T60,,,0x100
     ITEM Item3,L515W50H25T59,浏览,CALL SetEdit3
     PBAR PBAR1,L20T95W545H24,
