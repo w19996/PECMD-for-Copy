@@ -1,7 +1,8 @@
 # PECMD-for-Copy
 根据文件列表提取文件
 文件列表类似如下，只有相对路径，路径最后不能有`\`
-```JAVA
+
+```
 Windows\System32\drivers\fbwf.sys
 Windows\System32\drivers\wimfsf.sys
 Windows\System32\zh-CN\winpeshl.exe.mui
