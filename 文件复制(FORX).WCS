@@ -27,7 +27,10 @@ _SUB CCC
     FORX *NL &all,&&content,
     {
     FIND *&content=,EXIT - 
-    //MESS %&m%    
+    //MESS %&m%
+    STRL number1=%&content%
+    MSTR contentnew=%number1%,1,%&content%
+    IFEX |%contentnew%=\,TEAM CALC ta=%number1%-1|MSTR &&content=1,%ta%,%&content%     
     FDIR &&Dir=%&CurDir%\%&content%
     //MESS %&Dir%
     TEAM FIND $%Chek1.Check%=1,MESS-icon5 点击确定继续 @暂停中#OK|ENVI @Chek1.Check=0
@@ -36,9 +39,9 @@ _SUB CCC
     SET &abcd=%&ERROR%
     CALC &m=%&m%+1
     CALC &vvv=%&m%/%&n%*100
-	CALC &P=floor(%&vvv%)
-	ENVI &&F=%&m%/%n%
-	ENVI &PA=%&P%%
+    CALC &P=floor(%&vvv%)
+    ENVI &&F=%&m%/%n%
+    ENVI &PA=%&P%%
     ENVI @PBAR1=%&vvv%;#0X000000:已完成%&PA%：%&F%  
     IFEX [ $%&abcd%=0 | $%&abcd%=2 ],{
     //MESS %&abcd%
