@@ -1,92 +1,200 @@
-﻿#!PECMD
-
-@TEAM ENVI^ EnviMode=1| ENVI^ ForceLocal=1
+﻿@TEAM ENVI^ EnviMode=1| ENVI^ ForceLocal=1
 CALL $--ret:&DPIA user32.dll,SetProcessDPIAware //设置dpi感知模式
 CALL $--ret:&hdc user32.dll,GetDC,#0  //获取显示器0（一般是主显示器）的句柄
 CALL $--ret:&LOGPIXELSX Gdi32.dll,GetDeviceCaps,#%hdc%,#88     //获取显示器横向DPI，LOGPIXELSX为#88，纵向LOGPIXELSY为#90,两个值是一样的。
+ENVI &&n=0
+ENVI &&m=0
+ENVI &&acd=
+ENVI &&abcd=
+ENVI &&Pagetag=
 CALL @WIN1
-_SUB SetEdit2
+_SUB 获取列表文件
     BROW txtfile,, 请选择列表文件, txt
-    FIND $%txtFILE%=,!ENVI @Edit1=%txtFILE%
+    FIND $%txtFILE%=,!ENVI @列表路径=%txtFILE%
 _END
-_SUB SetEdit3
-    BROW MntDir2,*%Edit3%, 请选择源文件目录
-    FIND $%Mntdir2%=,!ENVI @Edit3=%Mntdir2%
+_SUB 获取源文件
+    BROW MntDir1,*%源路径%, 请选择源文件目录
+    FIND $%Mntdir1%=,!ENVI @源路径=%Mntdir1%
+_END
+_SUB 保存路径
+    BROW MntDir2,*%目标路径%, 请选择保存目录
+    FIND $%Mntdir2%=,!ENVI @目标路径=%Mntdir2%
+_END
+_SUB 获取文件目录
+    BROW MntDir3,*%文件目录%, 请选择文件目录
+    FIND $%Mntdir3%=,!ENVI @文件目录=%Mntdir3%
+_END
+_SUB WIN1,W684H500,文件复制 By:泮安宁,KILL  *%&__PID%,,,,-scale:%&LOGPIXELSX%
+    ENVI @WIN1.Font=12:宋体
+    TABS TABS1,L0T0W684H435,Page1::复制:根据文件列表复制;Page2::文件列表:获取文件列表
+    LABE -left -vcenter lblxSize,L47T440W105H20,耗时：0秒,,0xB1
+    TIME Timer1,0,CALL TimeRefresh
+    DATE &iTimeStart uptime
+_END
+_SUB Page1,,,,,#,,-scale:%&LOGPIXELSX%
+    //ENVI @Page1.Font=12:宋体
+    LABE -ncmd -vcenter 列表标签,L33T13W82H25,列表文件:,,,12:宋体
+    ITEM -font:12:宋体 列表按钮,L570T13W60H25,浏览,TEAM CALL 获取列表文件|CALL 计数,
+    EDIT. -vcenter 列表路径,L128T13W430H25,,,0x100,,10:宋体
+    LABE -ncmd -vcenter 来源标签,L33T56W82H25,来源路径:,,,12:宋体
+    ITEM -font:12:宋体 来源按钮,L570T55W60H25,浏览,CALL 获取源文件,
+    EDIT. -vcenter 源路径,L128T55W430H25,,,0x100,,10:宋体    
+    LABE -ncmd -vcenter 目标标签,L35T96W82H25,目标路径:,,,12:宋体
+    ITEM -font:12:宋体 目标按钮,L570T97W60H25,浏览,CALL 保存路径,
+    EDIT. -vcenter 目标路径,L127T97W430H25,,,0x100,,10:宋体
+    MEMO. MEMO1,L33T180W613H175,,,0x48
+    PBAR PBAR1,L33T139W595H25,PBAR1
+    ITEM -font:12:宋体 ITEM1,L298T359W81H40,执行,THREAD* TEAM CALL Start|CALL TimeRefresh|MESS= 完成,
+    ITEM -font:12:宋体 ITEM2,L298T359W81H40,暂停,CALL Stop,,-16
+    RADI RADI1,L520T359W102H20,按列表复制,CALL RadiTrans 1,1,1
+    ENVI @RADI1.Font=12:宋体
+    RADI RADI2,L520T378W101H20,按列表删除,CALL RadiTrans 2,,1
+    ENVI @RADI2.Font=12:宋体
+    CHEK CHEK1,,,,-2
+    //mess %CHEK1.Check%
+    CHEK CHEK2,L48T359W95H20,输出日志,,
+    ENVI @CHEK2.Font=12:宋体
+    //ITEM Item2,L200T150W50H30,执行,THREAD* TEAM CALL TimeStart|CALL TimeRefresh|MESS. 完成
 _END
 
-//配置文件或者PECMD程序放入目标目录
-
-_SUB CCC
-    READ "%Edit1%",*r,&&all
-    SET &n=0
+_SUB Start
+    TEAM FORX %列表路径%,Mytxt,1,FEXT fEx=%Mytxt%|FEXT fD=%源路径%
+    IFEX [ '%fEx%'='txt' & '%fD%'='' & '%源路径%'<>'' ],
+    {ENVI @ITEM1.Enable=0
+    ENVI @ITEM1.Visible=0
+    ENVI @ITEM2.Enable=1
+    ENVI @ITEM2.Visible=1
+    ENVI @CHEK2.Enable=0
+    ENVI @RADI1.Enable=0
+    ENVI @RADI2.Enable=0
+    ENVI &Pagetag=复制
+    CALL TimeStart     
+    }!
+    {
+    MESS= 请选择正确的列表文件和目录
+    EXIT ToWin
+    }
+_END
+_SUB Stop
+    ENVI @CHEK1.Check=1 
+_END
+_SUB 计数
+    READ "%列表路径%",*r,&&all
+    ENVI &acd=%&&all%    
+    //SET &n=0
     FORX *NL &all,&&content,
     {
     FIND *&content=,EXIT -    
     CALC &n=%&n%+1
     //MESS %n%
     }
-    SET &m=0  
-    FORX *NL &all,&&content,
+_END
+
+_SUB Main
+    //READ "%列表路径%",*r,&&all    
+    //SET &m=0 
+    //mess %acd% 
+    DATE &iTimeStart uptime
+    FORX *NL &acd,&&content,
     {
-    FIND *&content=,EXIT - 
-    //MESS %&m%
-    STRL number1=%&content%
-    MSTR contentnew=%number1%,1,%&content%
-    IFEX |%contentnew%=\,TEAM CALC ta=%number1%-1|MSTR &&content=1,%ta%,%&content%     
-    FDIR &&Dir=%&CurDir%\%&content%
-    //MESS %&Dir%
-    TEAM FIND $%Chek1.Check%=1,MESS-icon5 点击确定继续 @暂停中#OK|ENVI @Chek1.Check=0
-    PATH %&Dir%
-    FILE "%Edit3%\%&content%"=>"%&Dir%"
-    SET &abcd=%&ERROR%
-    CALC &m=%&m%+1
-    CALC &vvv=%&m%/%&n%*100
-    CALC &P=floor(%&vvv%)
-    ENVI &&F=%&m%/%n%
-    ENVI &PA=%&P%%
-    ENVI @PBAR1=%&vvv%;#0X000000:已完成%&PA%：%&F%  
-    IFEX [ $%&abcd%=0 | $%&abcd%=2 ],{
-    //MESS %&abcd%
-    FIND $%&abcd%=0,{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制成功！|ENVI @MEMO1=%&V%
-    }!{ TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
-    } 
-    }! { TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制失败！|ENVI @MEMO1=%&V%
-    }  
-    //MESS %&abcd%
+        FIND *&content=,EXIT - 
+        //MESS %&m%
+        STRL number1=%&content%
+        MSTR contentnew=%number1%,1,%&content%
+        IFEX |%contentnew%=\,TEAM CALC ta=%number1%-1|MSTR &&content=1,%ta%,%&content%
+        TEAM FIND $%CHEK1.Check%=1,MESS-icon5 点击确定继续 @暂停中#OK|ENVI @CHEK1.Check=0
+        IFEX |%RADI1.Check%=1,
+        {
+            IFEX |%目标路径%=,FDIR &&Dir=%&CurDir%\%&content%!FDIR &&Dir=%目标路径%\%&content%
+            //MESS %&Dir%
+            //EXIT ToWin    
+            PATH %&Dir%
+            TEAM FILE "%源路径%\%&content%"=>"%&Dir%"|SET &abcd=%&ERROR%
+            IFEX [ $%&abcd%=0 | $%&abcd%=2 ],
+            {
+                //MESS %&abcd%
+                FIND $%&abcd%=0,
+                { 
+                    TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制成功！|ENVI @MEMO1=%&V%
+                }!
+                { 
+                    TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
+                } 
+            }!
+            {
+                TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制失败！|ENVI @MEMO1=%&V%
+            }  
+            //MESS %&abcd%
+        }!
+        {
+            TEAM FILE "%源路径%\%&content%"|SET &abcd=%&ERROR%            
+            IFEX [ $%&abcd%=0 | $%&abcd%=2 ],
+            {
+                //MESS %&abcd%
+                FIND $%&abcd%=0,
+                {
+                    TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%删除成功！|ENVI @MEMO1=%&V%
+                }!
+                {
+                    TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
+                } 
+            }!
+            {
+                TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%删除失败！|ENVI @MEMO1=%&V%
+            }  
+            //MESS %&abcd%
+        }
+        CALC &m=%&m%+1
+        //mess. %m%
+        CALC &vvv=%&m%/%&n%*100##1
+        //CALC &P=floor(%&vvv%)##2
+        ENVI &&F=%&m%/%n%
+        ENVI &PA=%&vvv%%
+        ENVI @PBAR1=%&vvv%;#0X000000:已完成%&PA%：%&F%  
     }
-    FIND $%Chek2.Check%=1, WRIT *c %CurDir%\LOG.txt,$+0,%MEMO1%
-    MESS= 复制完成  
-    ENVI @Item6=复制完成
-    ENVI @Item6.Enable=0
+    FIND $%CHEK2.Check%=1, WRIT *c %CurDir%\LOG.txt,$+0,%MEMO1% 
+    ENVI @ITEM2=复制完成
+    ENVI @ITEM2.Enable=0
 _END
 
-_SUB Start
-    //IFEX $%m%<%n%&$%m%=0,Thread* CALL CCC
-    TEAM FORX %Edit1%,Mytxt,1,FEXT fEx=%Mytxt%|FEXT fD=%Edit3%
-    IFEX [ '%fEx%'='txt' & '%fD%'='' & '%Edit3%'<>'' ],TEAM ENVI @Item4.Enable=0|ENVI @Item4.Visible=0|ENVI @Item6.Enable=1|ENVI @Item6.Visible=1|ENVI @Chek2.Enable=0|Thread* CALL CCC! MESS= 请选择正确的列表文件和目录
+_SUB TimeStart
+    DATE &iTimeStart uptime
+    ENVI @Timer1=50
+    IFEX |%Pagetag%=复制,CALL Main
+    IFEX |%Pagetag%=列表,CALL FileListDir
+    ENVI @Timer1=0
 _END
-
-_SUB Stop
-    ENVI @Chek1.Check=1 
+_SUB TimeRefresh
+    TEAM DATE &iTimeCur uptime|CALC iTimes=(%&iTimeCur%-%&iTimeStart%)/1000##2
+    ENVI @lblxSize=耗时：%iTimes%秒
 _END
-    
-_SUB WIN1,W600H400,文件复制 By:泮安宁,KILL  *%&__PID%,,,,-scale:%&LOGPIXELSX%
-	ENVI @WIN1.Font=12:宋体
-    LABE -left Label1,W400H20,注意：需将本程序移动到目标目录运行！,,0xFF0000
-    LABE Label,L22W130H20T20,选择列表文件：
-    EDIT. -3D -vcenter Edit1,L150W360H25T20,,,0x100
-    ITEM Item1,L515W50H25T20,浏览,CALL SetEdit2
-    LABE Labe3,L22W145H20T60,路径上级目录：
-    EDIT. -3D -vcenter Edit3,L150W360H25T60,,,0x100
-    ITEM Item3,L515W50H25T60,浏览,CALL SetEdit3
-    PBAR PBAR1,L20T95W545H24,
-    MEMO. MEMO1,L20T130W565H180,,,0x40
-    ITEM Item4,L240W100H50T310,开始复制,CALL Start
-    ITEM Item6,L240W100H50T310,暂停,CALL Stop
-    CHEK Chek1,L500W50H25T330,,-1
-    CHEK -center Chek2, L30W85H30T320, 输出LOG
-    ENVI @Chek1.Visible=0
-    ENVI @Item6.Visible=0
-    ENVI @Item6.Enable=0
-    ENVI @MEMO1.ReadOnly=1
+_SUB RadiTrans
+    //mess. %1
+    IFEX $%1=2,
+    {
+        ENVI @目标标签.Visible=0
+        ENVI @目标按钮.Visible=0
+        ENVI @目标路径.Visible=0
+    }
+    IFEX $%1=1,
+    {
+        ENVI @目标标签.Visible=1
+        ENVI @目标按钮.Visible=1
+        ENVI @目标路径.Visible=1
+    }
+_END
+_SUB Page2,W284H284,,,,#,,-scale:%&LOGPIXELSX%
+    LABE -ncmd -vcenter List标签,L50T55W80H25,获取目录:,,,12:宋体
+    EDIT. -vcenter 文件目录,L128T55W430H25,,,0x100,,10:宋体
+    IMAG Image1,L128T100W430H150,#1|GIF
+    ENVI @Image1.Visible=0
+    ITEM -font:12:宋体 List按钮,L570T55W60H25,浏览,CALL 获取文件目录,
+    ITEM -font:12:宋体 文件按钮,L298T300W81H40,执行,THREAD* TEAM ENVI @文件按钮.Enable=0|ENVI @Image1.Visible=1|ENVI &Pagetag=列表|CALL TimeStart|CALL TimeRefresh|ENVI @Image1.Visible=0|MESS. 完成,
+    TIME Timer1,0,CALL TimeRefresh
+    DATE &iTimeStart uptime
+_END
+_SUB FileListDir
+    DATE &iTimeStart uptime
+    DIR &Filelist /s/a:-d/O:N "%文件目录%"
+    WRIT *c %CurDir%\Filelist.txt,$+0,%&Filelist%
 _END
