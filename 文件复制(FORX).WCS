@@ -60,19 +60,20 @@ _END
 _SUB Start
     TEAM FORX %列表路径%,Mytxt,1,FEXT fEx=%Mytxt%|FEXT fD=%源路径%
     IFEX [ '%fEx%'='txt' & '%fD%'='' & '%源路径%'<>'' ],
-    {ENVI @ITEM1.Enable=0
-    ENVI @ITEM1.Visible=0
-    ENVI @ITEM2.Enable=1
-    ENVI @ITEM2.Visible=1
-    ENVI @CHEK2.Enable=0
-    ENVI @RADI1.Enable=0
-    ENVI @RADI2.Enable=0
-    ENVI &Pagetag=复制
-    CALL TimeStart     
+    {
+        ENVI @ITEM1.Enable=0
+        ENVI @ITEM1.Visible=0
+        ENVI @ITEM2.Enable=1
+        ENVI @ITEM2.Visible=1
+        ENVI @CHEK2.Enable=0
+        ENVI @RADI1.Enable=0
+        ENVI @RADI2.Enable=0
+        ENVI &Pagetag=复制
+        CALL TimeStart     
     }!
     {
-    MESS= 请选择正确的列表文件和目录
-    EXIT ToWin
+        MESS= 请选择正确的列表文件和目录
+        EXIT ToWin
     }
 _END
 _SUB Stop
@@ -84,9 +85,9 @@ _SUB 计数
     //SET &n=0
     FORX *NL &all,&&content,
     {
-    FIND *&content=,EXIT -    
-    CALC &n=%&n%+1
-    //MESS %n%
+        FIND *&content=,EXIT -    
+        ^CALC &n=%&n%+1
+        //MESS %n%
     }
 _END
 
@@ -144,16 +145,16 @@ _SUB Main
             }  
             //MESS %&abcd%
         }
-        CALC &m=%&m%+1
+        ^CALC &m=%&m%+1
         //mess. %m%
-        CALC &vvv=%&m%/%&n%*100##1
+        ^CALC &vvv=%&m%/%&n%*100##1
         //CALC &P=floor(%&vvv%)##2
         ENVI &&F=%&m%/%n%
         ENVI &PA=%&vvv%%
         ENVI @PBAR1=%&vvv%;#0X000000:已完成%&PA%：%&F%  
     }
-    FIND $%CHEK2.Check%=1, WRIT *c %CurDir%\LOG.txt,$+0,%MEMO1% 
-    ENVI @ITEM2=复制完成
+    FIND $%CHEK2.Check%=1,WRIT *c %CurDir%\LOG.txt,$+0,%MEMO1% 
+    ENVI @ITEM2=完成
     ENVI @ITEM2.Enable=0
 _END
 
@@ -166,7 +167,15 @@ _SUB TimeStart
 _END
 _SUB TimeRefresh
     TEAM DATE &iTimeCur uptime|CALC iTimes=(%&iTimeCur%-%&iTimeStart%)/1000##2
-    ENVI @lblxSize=耗时：%iTimes%秒
+    IFEX $%iTimes%>=60,
+    {
+        ^CALC #分=%iTimes%/60
+        ^CALC #秒=%iTimes%-%分%*60
+        ENVI @lblxSize=耗时：%分%分%秒%秒
+    }!
+    {
+        ENVI @lblxSize=耗时：%iTimes%秒
+    }
 _END
 _SUB RadiTrans
     //mess. %1
