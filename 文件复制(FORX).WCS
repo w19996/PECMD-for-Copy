@@ -1,4 +1,4 @@
-﻿@TEAM ENVI^ EnviMode=1| ENVI^ ForceLocal=1
+@TEAM ENVI^ EnviMode=1| ENVI^ ForceLocal=1
 CALL $--ret:&DPIA user32.dll,SetProcessDPIAware //设置dpi感知模式
 CALL $--ret:&hdc user32.dll,GetDC,#0  //获取显示器0（一般是主显示器）的句柄
 CALL $--ret:&LOGPIXELSX Gdi32.dll,GetDeviceCaps,#%hdc%,#88     //获取显示器横向DPI，LOGPIXELSX为#88，纵向LOGPIXELSY为#90,两个值是一样的。
@@ -9,7 +9,7 @@ ENVI &&abcd=
 ENVI &&Pagetag=
 CALL @WIN1
 _SUB 获取列表文件
-    BROW txtfile,, 请选择列表文件, txt
+    BROW txtfile,, 请选择列表文件,txt
     FIND $%txtFILE%=,!ENVI @列表路径=%txtFILE%
 _END
 _SUB 获取源文件
@@ -24,9 +24,21 @@ _SUB 获取文件目录
     BROW MntDir3,*%文件目录%, 请选择文件目录
     FIND $%Mntdir3%=,!ENVI @文件目录=%Mntdir3%
 _END
-_SUB WIN1,W684H500,文件复制 By:泮安宁,KILL  *%&__PID%,,,,-scale:%&LOGPIXELSX%
+_SUB 获取wim路径
+    BROW wimfile,, 请选择wim文件,wim文件|*.wim|esd文件|*.esd|所有文件|*.*
+    FIND $%wimFILE%=,!ENVI @wim路径=%wimFILE%
+_END
+_SUB 获取wim列表文件
+    BROW txtfile,, 请选择列表文件,txt
+    FIND $%txtFILE%=,!ENVI @wim列表路径=%txtFILE%
+_END
+_SUB wim保存路径
+    BROW MntDir4,*%源路径%, 请选择保存目录
+    FIND $%Mntdir4%=,!ENVI @wim保存路径=%Mntdir4%
+_END
+_SUB WIN1,W684H500,文件提取,KILL  *%&__PID%,,,,-scale:%&LOGPIXELSX%
     ENVI @WIN1.Font=12:宋体
-    TABS TABS1,L0T0W684H435,Page1::复制:根据文件列表复制;Page2::文件列表:获取文件列表
+    TABS TABS1,L0T0W684H435,Page1::复制:根据文件列表复制;Page2::文件列表:获取文件列表;Page3::wimlib:直接提取wim文件
     LABE -left -vcenter lblxSize,L47T440W105H20,耗时：0秒,,0xB1
     TIME Timer1,0,CALL TimeRefresh
     DATE &iTimeStart uptime
@@ -34,12 +46,12 @@ _END
 _SUB Page1,,,,,#,,-scale:%&LOGPIXELSX%
     //ENVI @Page1.Font=12:宋体
     LABE -ncmd -vcenter 列表标签,L33T13W82H25,列表文件:,,,12:宋体
-    ITEM -font:12:宋体 列表按钮,L570T13W60H25,浏览,TEAM CALL 获取列表文件|CALL 计数,
+    ITEM -font:12:宋体 列表按钮,L570T13W60H25,浏览,TEAM CALL 获取列表文件|THREAD* CALL 计数,
     EDIT. -vcenter 列表路径,L128T13W430H25,,,0x100,,10:宋体
     LABE -ncmd -vcenter 来源标签,L33T56W82H25,来源路径:,,,12:宋体
     ITEM -font:12:宋体 来源按钮,L570T55W60H25,浏览,CALL 获取源文件,
     EDIT. -vcenter 源路径,L128T55W430H25,,,0x100,,10:宋体    
-    LABE -ncmd -vcenter 目标标签,L35T96W82H25,目标路径:,,,12:宋体
+    LABE -ncmd -vcenter 目标标签,L35T96W82H25,保存路径:,,,12:宋体
     ITEM -font:12:宋体 目标按钮,L570T97W60H25,浏览,CALL 保存路径,
     EDIT. -vcenter 目标路径,L127T97W430H25,,,0x100,,10:宋体
     MEMO. MEMO1,L33T180W613H175,,,0x48
@@ -97,50 +109,54 @@ _SUB Main
     //mess %acd% 
     DATE &iTimeStart uptime
     FORX *NL &acd,&&content,
-    {
+    {*
         FIND *&content=,EXIT - 
-        //MESS %&m%
-        STRL number1=%&content%
-        MSTR contentnew=%number1%,1,%&content%
-        IFEX |%contentnew%=\,TEAM CALC ta=%number1%-1|MSTR &&content=1,%ta%,%&content%
+        //MESS %&m%       
+        MSTR contentnew=-1,1,%&content%
+        IFEX |%contentnew%=\,
+        {*
+            STRL number1=%&content%
+            CALC ta=%number1%-1
+            MSTR &&content=1,%ta%,%&content%
+        }
         TEAM FIND $%CHEK1.Check%=1,MESS-icon5 点击确定继续 @暂停中#OK|ENVI @CHEK1.Check=0
         IFEX |%RADI1.Check%=1,
-        {
+        {*
             IFEX |%目标路径%=,FDIR &&Dir=%&CurDir%\%&content%!FDIR &&Dir=%目标路径%\%&content%
             //MESS %&Dir%
             //EXIT ToWin    
             PATH %&Dir%
             TEAM FILE "%源路径%\%&content%"=>"%&Dir%"|SET &abcd=%&ERROR%
             IFEX [ $%&abcd%=0 | $%&abcd%=2 ],
-            {
+            {*
                 //MESS %&abcd%
                 FIND $%&abcd%=0,
-                { 
+                {* 
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制成功！|ENVI @MEMO1=%&V%
                 }!
-                { 
+                {* 
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
                 } 
             }!
-            {
+            {*
                 TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制失败！|ENVI @MEMO1=%&V%
             }  
             //MESS %&abcd%
         }!
-        {
+        {*
             TEAM FILE "%源路径%\%&content%"|SET &abcd=%&ERROR%            
             IFEX [ $%&abcd%=0 | $%&abcd%=2 ],
-            {
+            {*
                 //MESS %&abcd%
                 FIND $%&abcd%=0,
-                {
+                {*
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%删除成功！|ENVI @MEMO1=%&V%
                 }!
-                {
+                {*
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
                 } 
             }!
-            {
+            {*
                 TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%删除失败！|ENVI @MEMO1=%&V%
             }  
             //MESS %&abcd%
@@ -163,17 +179,18 @@ _SUB TimeStart
     ENVI @Timer1=50
     IFEX |%Pagetag%=复制,CALL Main
     IFEX |%Pagetag%=列表,CALL FileListDir
+    IFEX |%Pagetag%=wimlib,CALL wim提取
     ENVI @Timer1=0
 _END
 _SUB TimeRefresh
     TEAM DATE &iTimeCur uptime|CALC iTimes=(%&iTimeCur%-%&iTimeStart%)/1000##2
     IFEX $%iTimes%>=60,
-    {
+    {*
         ^CALC #分=%iTimes%/60
         ^CALC #秒=%iTimes%-%分%*60
         ENVI @lblxSize=耗时：%分%分%秒%秒
     }!
-    {
+    {*
         ENVI @lblxSize=耗时：%iTimes%秒
     }
 _END
@@ -205,5 +222,88 @@ _END
 _SUB FileListDir
     DATE &iTimeStart uptime
     DIR &Filelist /s/a:-d/O:N "%文件目录%"
-    WRIT *c %CurDir%\Filelist.txt,$+0,%&Filelist%
+    WRIT *c %CurDir%\Filelist.txt,$+0,%&Filelist%  
+_END
+_SUB Page3,W681H498,,,,,,-scale:%&LOGPIXELSX%
+    ENVI @Page3.Font=12:宋体
+    LABE -ncmd -vcenter wimlib提取标签,L37T49W80H25,wim路 径:,,
+    EDIT. -vcenter wim路径,L122T49W430H25,,,0x100,,10:宋体
+    ITEM -font:12:宋体 wim按钮,L557T49W60H25,浏览,THREAD* TEAM CALL 获取wim路径|CALL wiminfo,
+    LABE -ncmd -vcenter wimlib保存标签,L37T117W80H25,保存路径:,,
+    EDIT. -vcenter wim保存路径,L121T117W430H25,,,0x100,,10:宋体
+    ITEM -font:12:宋体 wim保存按钮,L556T117W60H25,浏览,CALL wim保存路径,
+    MEMO. MEMO2,L37T185W600H175,,,0x48,,10:宋体
+    ITEM -font:12:宋体 wim提取按钮,L292T367W81H40,执行,THREAD* TEAM ENVI &Pagetag=wimlib|CALL TimeStart|CALL TimeRefresh|MESS= 完成,
+    LIST -vcenter wimList,L121T82W496H25,,ENVI &&wimvolume=%wimList.isel%,
+    //ENVI @wimList.Font=10:宋体
+    LABE -ncmd -vcenter 卷标签,L37T83W80H25,请选择卷:,,
+    LABE -ncmd -vcenter wimlib列表文件,L37T15W80H25,列表文件:,,
+    EDIT. -vcenter wim列表路径,L123T15W430H25,,,0x100,,10:宋体
+    ITEM -font:12:宋体 wim列表按钮,L557T15W60H25,浏览,CALL 获取wim列表文件,
+    PBAR PBAR2,L37T150W578H22,PBAR1
+_END
+_SUB wim提取   
+    EXEC* -err+ -code:ANSI -cmd:OnTransNL1 -pid:varname --exe:*cab:#100:wimlib-imagex.exe &OutVar1=!wimlib-imagex.exe extract "%wim路径%" %&wimvolume% @"%wim列表路径%" --dest-dir="%wim保存路径%" --nullglob    
+_END
+_SUB OnTransNL1 *
+    SED &&提取进度=0,\n,\r\n,%&OutVar1%
+    ENVI @MEMO2=%&提取进度%
+    LPOS* * ,*&定位行数1=Creating files,,&提取进度
+    LPOS* * ,*&定位行数2=Extracting file data,,&提取进度
+    LPOS* * ,*&定位行数3=Applying metadata to files,,&提取进度
+    LPOS* * ,*&定位行数4=Done extracting files,,&提取进度
+    IFEX [ $%&定位行数2%=0 & $%&定位行数1%<>0 ],
+    {*
+        MSTR &最后一行=<-1>%&定位行数1%
+        READ  -,%&最后一行%,&进度内容,%&提取进度%
+        MSTR -delims:( &进度=<2>%&进度内容%
+        MSTR -delims:) &new进度=<1>%&进度%
+        STRL i=%&new进度%
+        CALC l=%i%-1
+        MSTR 百分数=1,%l%,%&new进度%
+        ENVI @PBAR2=%&百分数%;#0X000000:创建文件：%百分数%%
+    }
+    IFEX [ $%&定位行数3%=0 & $%&定位行数2%<>0 ],
+    {*
+        MSTR &最后一行=<-1>%&定位行数2%
+        READ  -,%&最后一行%,&进度内容,%&提取进度%
+        MSTR -delims:( &进度=<2>%&进度内容%
+        MSTR -delims:) &new进度=<1>%&进度%
+        STRL i=%&new进度%
+        CALC l=%i%-1
+        MSTR 百分数=1,%l%,%&new进度%
+        ENVI @PBAR2=%&百分数%;#0X000000:提取文件：%百分数%%
+    }        
+    IFEX [ $%&定位行数4%=0 & $%&定位行数3%<>0 ],
+    {*
+        MSTR &最后一行=<-1>%&定位行数3%
+        READ  -,%&最后一行%,&进度内容,%&提取进度%
+        MSTR -delims:( &进度=<2>%&进度内容%
+        MSTR -delims:) &new进度=<1>%&进度%
+        STRL i=%&new进度%
+        CALC l=%i%-1
+        MSTR 百分数=1,%l%,%&new进度%
+        ENVI @PBAR2=%&百分数%;#0X000000:应用元数据：%百分数%%
+    }        
+    IFEX $%&定位行数4%<>0,
+    {*
+        ENVI @PBAR2=100;#0X000000:提取文件完成
+    }
+_END
+_SUB wiminfo
+    EXEC* -err+ wiminfo2=!Dism.exe /Get-ImageInfo /ImageFile:%wim路径%
+    SED &&winfo=0,\n,\r\n,%wiminfo2%
+    LPOS* * ,*&定位行数=名称:,,&winfo
+    //mess. %定位行数%
+    IFEX $%定位行数%<>0,
+    {*
+        FORX *NL:  &定位行数,&&infocontents,
+        {*
+            READ  -,%&infocontents%,&内容,%&winfo%
+            MSTR -delims:: &&wiminfocontent=<2>%内容%
+            //mess. %&wiminfocontent%
+            ENVI @wimList.ADDSEL=%&wiminfocontent%
+            ENVI @wimList.isel=1
+        }
+    }
 _END
