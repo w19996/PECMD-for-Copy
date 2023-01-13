@@ -175,12 +175,46 @@ _SUB Main
 _END
 
 _SUB TimeStart
-    DATE &iTimeStart uptime
-    ENVI @Timer1=50
-    IFEX |%Pagetag%=复制,CALL Main
-    IFEX |%Pagetag%=列表,CALL FileListDir
-    IFEX |%Pagetag%=wimlib,CALL wim提取
-    ENVI @Timer1=0
+    //mess %Pagetag%
+    IFEX |%Pagetag%=复制,
+    {
+        DATE &iTimeStart uptime
+        ENVI @Timer1=50
+        CALL Main
+        ENVI @Timer1=0
+    }
+    IFEX '%Pagetag%'='列表',
+    {
+         IFEX $%RADIdll1.Check%=1,
+        {
+            ENVI @Image1.Visible=1
+            DATE &iTimeStart uptime
+            ENVI @Timer1=50
+            CALL FileListDir
+            ENVI @Timer1=0
+        }!
+        {
+            IFEX '%程序名称%'='',
+            {
+                MESS. 请输入程序名
+                EXIT ToWin
+            }!
+            {
+                ENVI @Image1.Visible=1
+                DATE &iTimeStart uptime
+                ENVI @Timer1=50
+                CALL FileListDir
+                ENVI @Timer1=0
+            }
+        }     
+    }
+    IFEX |%Pagetag%=wimlib,
+    {
+        DATE &iTimeStart uptime
+        ENVI @Timer1=50
+        CALL wim提取
+        ENVI @Timer1=0
+    }
 _END
 _SUB TimeRefresh
     TEAM DATE &iTimeCur uptime|CALC iTimes=(%&iTimeCur%-%&iTimeStart%)/1000##2
@@ -209,20 +243,77 @@ _SUB RadiTrans
         ENVI @目标路径.Visible=1
     }
 _END
-_SUB Page2,W284H284,,,,#,,-scale:%&LOGPIXELSX%
+_SUB Page2,W4004H284,,,,#,,-scale:%&LOGPIXELSX%
+    ENVI @Page2.Font=12:宋体
     LABE -ncmd -vcenter List标签,L50T55W80H25,获取目录:,,,12:宋体
     EDIT. -vcenter 文件目录,L128T55W430H25,,,0x100,,10:宋体
+    LABE -ncmd -vcenter Listdll,L50T55W70H25,程序名:,,,12:宋体
+    ENVI @Listdll.Visible=0
+    EDIT. -vcenter 程序名称,L128T55W430H25,,,0x100,,10:宋体
+    ENVI @程序名称.Visible=0
     IMAG Image1,L128T100W430H150,#1|GIF
     ENVI @Image1.Visible=0
     ITEM -font:12:宋体 List按钮,L570T55W60H25,浏览,CALL 获取文件目录,
-    ITEM -font:12:宋体 文件按钮,L298T300W81H40,执行,THREAD* TEAM ENVI @文件按钮.Enable=0|ENVI @Image1.Visible=1|ENVI &Pagetag=列表|CALL TimeStart|CALL TimeRefresh|ENVI @Image1.Visible=0|MESS. 完成,
+    ITEM -font:12:宋体 文件按钮,L298T300W81H40,执行,THREAD* TEAM ENVI &Pagetag=列表|CALL TimeStart|CALL TimeRefresh|ENVI @Image1.Visible=0|MESS. 完成,
+    RADI RADIdll1,L520T299W132H20,获取文件列表,CALL RadiTrans2 1,1,1
+    RADI RADIdll2,L520T318W131H20,获取文件依赖,CALL RadiTrans2 2,,1
+    ENVI @RADI1.Font=12:宋体
     TIME Timer1,0,CALL TimeRefresh
     DATE &iTimeStart uptime
 _END
+_SUB RadiTrans2
+    IFEX $%1=1,
+    {
+        ENVI @Listdll.Visible=0
+        ENVI @程序名称.Visible=0
+        ENVI @List按钮.Visible=1
+        ENVI @List标签.Visible=1
+        ENVI @文件目录.Visible=1
+    }
+    IFEX $%1=2,
+    {
+        ENVI @Listdll.Visible=1
+        ENVI @文件目录.Visible=0
+        ENVI @List按钮.Visible=0
+        ENVI @程序名称.Visible=1
+        ENVI @List标签.Visible=0
+    }
+_END
 _SUB FileListDir
-    DATE &iTimeStart uptime
-    DIR &Filelist /s/a:-d/O:N "%文件目录%"
-    WRIT *c %CurDir%\Filelist.txt,$+0,%&Filelist%  
+    IFEX |%RADIdll1.Check%=1,
+    {
+        DATE &iTimeStart uptime
+        DIR &Filelist /s/a:-d/O:N "%文件目录%"
+        IFEX |%文件目录%<>,
+        {
+            SED -ts &Filelist=0,%文件目录%\,,%&Filelist%
+            //MESS. %&文件的列表%
+            WRIT *c %CurDir%\Filelist.txt,$+0,%&Filelist%
+        }!
+        {
+            WRIT *c %CurDir%\Filelist.txt,$+0,%&Filelist%
+        }
+    }!
+    {
+            //MESS. %程序名称%
+            ENVI @文件按钮.Enable=0
+            EXEC* -err+ -code:ANSI -pid:varname --exe:*#101 &OutVar2=!Listdlls64.exe %程序名称%
+            //READ "F:\PECMD程序\文件复制\新建文件夹\DLLS.txt",*r,&all
+            LPOS* * ,*&定位行数=Path,,&OutVar2
+            //MESS. %&定位行数%
+            READ ,-1,line,%&OutVar2%
+            CALC length=%line%-%Path%
+            READ ,(%&定位行数%+1)+%length%,&contant,%&OutVar2%
+            FORX  *NL &contant,&linecontent,
+            {*
+                FIND *&linecontent=,EXIT -
+                MSTR &dll=<3->%&linecontent%
+                WRIT *c *v &dlls,$+0,%&dll%
+                //MESS. %&dlls%
+            }
+            //MESS. %&dlls%
+            WRIT *c %CurDir%\DLLS.txt,$+0,%&dlls%
+    }  
 _END
 _SUB Page3,W681H498,,,,,,-scale:%&LOGPIXELSX%
     ENVI @Page3.Font=12:宋体
