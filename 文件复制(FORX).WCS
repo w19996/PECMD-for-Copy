@@ -109,7 +109,7 @@ _SUB Main
     //mess %acd% 
     DATE &iTimeStart uptime
     FORX *NL &acd,&&content,
-    {*
+    {
         FIND *&content=,EXIT - 
         //MESS %&m%       
         MSTR contentnew=-1,1,%&content%
@@ -125,20 +125,20 @@ _SUB Main
             IFEX |%目标路径%=,FDIR &&Dir=%&CurDir%\%&content%!FDIR &&Dir=%目标路径%\%&content%
             //MESS %&Dir%
             //EXIT ToWin    
-            PATH %&Dir%
+            FIND ! "%&Dir%",PATH %&Dir%
             TEAM FILE "%源路径%\%&content%"=>"%&Dir%"|SET &abcd=%&ERROR%
             IFEX [ $%&abcd%=0 | $%&abcd%=2 ],
-            {*
+            {
                 //MESS %&abcd%
                 FIND $%&abcd%=0,
-                {* 
+                {
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制成功！|ENVI @MEMO1=%&V%
                 }!
-                {* 
+                {
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
                 } 
             }!
-            {*
+            {
                 TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%复制失败！|ENVI @MEMO1=%&V%
             }  
             //MESS %&abcd%
@@ -146,17 +146,17 @@ _SUB Main
         {*
             TEAM FILE "%源路径%\%&content%"|SET &abcd=%&ERROR%            
             IFEX [ $%&abcd%=0 | $%&abcd%=2 ],
-            {*
+            {
                 //MESS %&abcd%
                 FIND $%&abcd%=0,
-                {*
+                {
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%删除成功！|ENVI @MEMO1=%&V%
                 }!
-                {*
+                {
                     TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%文件不存在！|ENVI @MEMO1=%&V%   
                 } 
             }!
-            {*
+            {
                 TEAM SET  &V=%MEMO1%|WRIT *v  &V,$+0,%&content%删除失败！|ENVI @MEMO1=%&V%
             }  
             //MESS %&abcd%
