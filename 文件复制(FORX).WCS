@@ -13,32 +13,40 @@ _SUB 获取列表文件
     FIND $%txtFILE%=,!ENVI @列表路径=%txtFILE%
 _END
 _SUB 获取源文件
-    BROW MntDir1,*%源路径%, 请选择源文件目录
+    BROW MntDir1,*%源路径%,请选择源文件目录
     FIND $%Mntdir1%=,!ENVI @源路径=%Mntdir1%
 _END
 _SUB 保存路径
-    BROW MntDir2,*%目标路径%, 请选择保存目录
+    BROW MntDir2,*%目标路径%,请选择保存目录
     FIND $%Mntdir2%=,!ENVI @目标路径=%Mntdir2%
 _END
 _SUB 获取文件目录
-    BROW MntDir3,*%文件目录%, 请选择文件目录
+    BROW MntDir3,*%文件目录%,请选择文件目录
     FIND $%Mntdir3%=,!ENVI @文件目录=%Mntdir3%
 _END
 _SUB 获取wim路径
-    BROW wimfile,, 请选择wim文件,wim文件|*.wim|esd文件|*.esd|所有文件|*.*
+    BROW wimfile,,请选择wim文件,wim文件|*.wim|esd文件|*.esd|所有文件|*.*
     FIND $%wimFILE%=,!ENVI @wim路径=%wimFILE%
 _END
 _SUB 获取wim列表文件
-    BROW txtfile,, 请选择列表文件,txt
+    BROW txtfile,,请选择列表文件,txt
     FIND $%txtFILE%=,!ENVI @wim列表路径=%txtFILE%
 _END
 _SUB wim保存路径
-    BROW MntDir4,*%源路径%, 请选择保存目录
+    BROW MntDir4,*%源路径%,请选择保存目录
     FIND $%Mntdir4%=,!ENVI @wim保存路径=%Mntdir4%
+_END
+_SUB 注册表单元文件
+    BROW file,,注册表单元,
+    FIND $%file%=,!ENVI @注册表单元路径=%file%
+_END
+_SUB 注册表文件
+    BROW regfile,,注册表文件,注册表|*.reg,,,
+    FIND $%regfile%=,!ENVI @注册表文件路径=%regfile%
 _END
 _SUB WIN1,W684H500,文件提取,KILL  *%&__PID%,,,,-scale:%&LOGPIXELSX%
     ENVI @WIN1.Font=12:宋体
-    TABS TABS1,L0T0W684H435,Page1::复制:根据文件列表复制;Page2::文件列表:获取文件列表;Page3::wimlib:直接提取wim文件
+    TABS TABS1,L0T0W684H435,Page1::复制:根据文件列表复制;Page2::文件列表:获取文件列表;Page3::wimlib:直接提取wim文件;Page4::离线注册表:挂载卸载注册表单元
     LABE -left -vcenter lblxSize,L47T440W105H20,耗时：0秒,,0xB1
     TIME Timer1,0,CALL TimeRefresh
     DATE &iTimeStart uptime
@@ -215,6 +223,13 @@ _SUB TimeStart
         CALL wim提取
         ENVI @Timer1=0
     }
+    IFEX |%Pagetag%=reg,
+    {
+        DATE &iTimeStart uptime
+        ENVI @Timer1=50
+        CALL regedit
+        ENVI @Timer1=0
+    }    
 _END
 _SUB TimeRefresh
     TEAM DATE &iTimeCur uptime|CALC iTimes=(%&iTimeCur%-%&iTimeStart%)/1000##2
@@ -332,6 +347,112 @@ _SUB Page3,W681H498,,,,,,-scale:%&LOGPIXELSX%
     EDIT. -vcenter wim列表路径,L123T15W430H25,,,0x100,,10:宋体
     ITEM -font:12:宋体 wim列表按钮,L557T15W60H25,浏览,CALL 获取wim列表文件,
     PBAR PBAR2,L37T150W578H22,PBAR1
+_END
+_SUB Page4,W603H364,,,,#,,-scale:%&LOGPIXELSX%
+    ENVI @Page4.Font=12:宋体
+    LABE -ncmd -vcenter 注册表,L37T49W90H25,挂载  名称：,,
+    EDIT. -vcenter 挂载名称,L132T49W430H25,,,,,10:宋体
+    LABE -ncmd -vcenter 注册表单元路径标签,L37T89W90H25,单元  路径：,,
+    EDIT. -vcenter 注册表单元路径,L132T89W430H25,,,3,,10:宋体
+    ENVI @注册表单元路径.MSG=0x0203:CALL 注册表单元文件
+    //ITEM -font:12:宋体 注册表单元按钮,L567T89W60H25,浏览,CALL 注册表单元文件,
+    LABE -ncmd -vcenter 注册表文件路径标签,L37T129W90H25,注册表路径：,,
+    MEMO. 注册表文件路径,L132T129W447H125,,,0x218,,10:宋体
+    ENVI @注册表文件路径.MSG=0x0203:CALL 注册表文件
+    //ITEM -font:12:宋体 注册表文件按钮,L567T129W60H25,浏览,CALL 注册表文件,,16
+    RADI -center regRADI1,L137T299W60H30,挂载,CALL regraditrans,1,2
+    RADI -center regRADI2,L299T299W100H30,挂载并导入,CALL regraditrans,,2
+    RADI -center regRADI3,L501T299W60H30,卸载,CALL regraditrans,,2
+    ITEM regITEM,L303T328W84H40,开始,THREAD* TEAM ENVI &Pagetag=reg|CALL TimeStart|CALL TimeRefresh,
+    LABE -ncmd -vcenter -center 状态,L215T256W232H36,,,0x0000FF
+    ENVI @状态.Visible=0
+    ENVI @注册表文件路径标签.Visible=0
+_END
+_SUB regedit
+    TEAM ENVI @状态.Visible=1|ENVI @状态=正在执行
+    //mess %注册表文件路径%
+    //WAIT 2000
+    //MESS %regRADI1.Check% %regRADI2.Check%
+    IFEX [ '%regRADI1.Check%'='1' | '%regRADI2.Check%'='1' & '%注册表单元路径%'<>'' ],
+    {
+        //mess HIVE %挂载名称%,%注册表单元路径%
+        IFEX '%注册表单元路径%'<>'' , 
+        {   	
+			HIVE %挂载名称%,%注册表单元路径%
+			IFEX [ '%regRADI2.Check%'='1' ],
+			{
+				ENVI &&DIR=%TEMP%\%random%
+				//MESS %&&DIR%
+				FORX *NL &注册表文件路径,&Path,
+				{*
+					//MESS %Path%
+					FIND *&Path=,EXIT - 
+					CALL reganalyse ret
+					//MESS %ret%
+					//MESS "%&DIR%\%&fNam%"
+					EXEC regedit /s "%ret%"
+				}
+			}
+	}!
+        {
+            MESS 请先挂载配置单元
+        }
+    }!
+    {
+        HIVE %挂载名称%
+    }
+    ENVI @状态=完成
+_END
+_SUB reganalyse
+    READ "%&Path%",*r,&&regcontent
+    //MESS 1 %&&regcontent%
+    LPOS* * ,*&定位行数=[,,&&regcontent
+    //MESS %&定位行数%
+    MSTR &第一行=<1>%&定位行数%
+    //MESS %&第一行%
+    READ  -,%&第一行%,&挂载名称内容,%&&regcontent%
+    MSTR -delims:\ &name=<2>%&挂载名称内容%
+    //MESS 2 %&name%
+    IFEX '%&name%'<>'%挂载名称%',
+    {*
+        SED -ts -ni &&regcontent=0,%&name%,%挂载名称%,%&&regcontent%
+        //MESS 3 %&&regcontent% 
+    }
+    FNAM -ext &&fNam=%&Path%
+    PATH %&DIR%
+    set-ret %1=%&DIR%\%fNam%
+    WRIT *c %&DIR%\%fNam%,$+0,%&&regcontent%
+    //MESS 4 %&&regcontent%
+_END
+_SUB regraditrans
+    IFEX '%regRADI3.Check%'='1',
+    {
+        ENVI @注册表文件路径标签.visible=0
+        ENVI @注册表文件路径.visible=0
+        ENVI @注册表文件按钮.visible=0
+        ENVI @注册表单元路径标签.visible=0
+        ENVI @注册表单元路径.visible=0
+        ENVI @注册表单元按钮.visible=0
+    }!
+    {
+        IFEX '%regRADI1.Check%'='1',
+        {
+            ENVI @注册表文件路径标签.visible=0
+            ENVI @注册表文件路径.visible=0
+            ENVI @注册表文件按钮.visible=0
+            ENVI @注册表单元路径标签.visible=1
+            ENVI @注册表单元路径.visible=1
+            ENVI @注册表单元按钮.visible=1
+        }!
+        {
+            ENVI @注册表文件路径标签.visible=1
+            ENVI @注册表文件路径.visible=1
+            ENVI @注册表文件按钮.visible=1
+            ENVI @注册表单元路径标签.visible=1
+            ENVI @注册表单元路径.visible=1
+            ENVI @注册表单元按钮.visible=1
+        }
+    }
 _END
 _SUB wim提取   
     EXEC* -err+ -code:ANSI -cmd:OnTransNL1 -pid:varname --exe:*cab:#100:wimlib-imagex.exe &OutVar1=!wimlib-imagex.exe extract "%wim路径%" %&wimvolume% @"%wim列表路径%" --dest-dir="%wim保存路径%" --nullglob    
